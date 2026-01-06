@@ -1,0 +1,7 @@
+{
+  "name": "SmartMedia CMS",
+  "description": "AI-powered content management system for organizing, tagging, and analyzing media with advanced generation capabilities.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
