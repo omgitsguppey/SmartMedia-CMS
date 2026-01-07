@@ -20,27 +20,45 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
-// Helper to get base64 from a Blob URL (for internal library items)
+// Helper to get base64 from a Blob URL or Remote URL
 export const urlToBase64 = async (url: string): Promise<string> => {
-  const response = await fetch(url);
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result.split(',')[1]);
-      } else {
-        reject(new Error("Failed to convert URL to base64"));
-      }
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result.split(',')[1]);
+        } else {
+          reject(new Error("Failed to convert URL to base64"));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.error("Failed to fetch/convert URL", e);
+    throw e;
+  }
 };
 
-export const analyzeMedia = async (file: File, type: MediaType, knownPeople: string[] = []): Promise<AnalysisResult> => {
-  const base64Data = await fileToBase64(file);
-  const mimeType = file.type;
+export const analyzeMedia = async (file: File | undefined, type: MediaType, knownPeople: string[] = [], url?: string): Promise<AnalysisResult> => {
+  let base64Data = "";
+  let mimeType = "";
+
+  if (file) {
+    base64Data = await fileToBase64(file);
+    mimeType = file.type;
+  } else if (url) {
+    base64Data = await urlToBase64(url);
+    // Guess mime type from type or extension if possible, or default
+    if (type === MediaType.IMAGE) mimeType = 'image/jpeg';
+    else if (type === MediaType.VIDEO) mimeType = 'video/mp4';
+    else mimeType = 'audio/mp3';
+  } else {
+    throw new Error("No file or URL provided for analysis");
+  }
 
   let model = 'gemini-3-pro-preview';
   let prompt = "";

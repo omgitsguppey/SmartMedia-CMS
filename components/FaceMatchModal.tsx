@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { MediaItem } from '../types';
 import { checkForMatch } from '../services/geminiService';
@@ -139,71 +140,73 @@ export const FaceMatchModal: React.FC<FaceMatchModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-in fade-in duration-300">
       
       {/* Close Button */}
-      <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-white">
+      <button onClick={onClose} className="absolute top-6 right-6 p-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-white border border-white/10">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
 
       <div className="w-full max-w-4xl flex flex-col items-center space-y-8">
         <div className="text-center space-y-2">
-           <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Face Match</h2>
+           <h2 className="text-3xl font-bold bg-gradient-to-r from-ios-blue to-purple-500 bg-clip-text text-transparent">Face Match</h2>
            <p className="text-zinc-400">Improve your library's facial recognition with AI</p>
         </div>
 
         {status === 'SEARCHING' && (
-          <div className="flex flex-col items-center space-y-4 py-12">
+          <div className="flex flex-col items-center space-y-6 py-12">
              <div className="relative">
-               <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full"></div>
-               <div className="animate-spin h-12 w-12 border-4 border-blue-500 rounded-full border-t-transparent relative z-10"></div>
+               <div className="absolute inset-0 bg-ios-blue/20 blur-xl rounded-full"></div>
+               <div className="animate-spin h-14 w-14 border-4 border-ios-blue rounded-full border-t-transparent relative z-10"></div>
              </div>
-             <p className="text-zinc-500 animate-pulse">Scanning library for matches...</p>
-             <p className="text-xs text-zinc-700 font-mono">Attempt {searchCount}/5</p>
+             <div className="text-center">
+                <p className="text-zinc-300 font-medium animate-pulse">Scanning library...</p>
+                <p className="text-[10px] text-zinc-600 font-mono mt-1 uppercase tracking-widest">Attempt {searchCount}/5</p>
+             </div>
           </div>
         )}
 
         {status === 'FOUND' && currentMatch && (
            <div className="w-full animate-in zoom-in-95 duration-300">
-             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-12 mb-8">
+             <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-16 mb-10">
                 {/* Reference */}
-                <div className="flex flex-col items-center gap-3">
-                   <div className="w-32 h-32 md:w-48 md:h-48 rounded-2xl overflow-hidden border-4 border-blue-500/30 shadow-2xl relative">
+                <div className="flex flex-col items-center gap-4">
+                   <div className="w-32 h-32 md:w-56 md:h-56 rounded-2xl overflow-hidden border-4 border-ios-blue/30 shadow-[0_0_30px_rgba(41,151,255,0.2)] relative">
                       <img src={currentMatch.refImage} className="w-full h-full object-cover" alt="Reference" />
-                      <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-center text-xs font-bold text-white uppercase">Known</div>
+                      <div className="absolute bottom-0 inset-x-0 bg-black/70 backdrop-blur-sm p-2 text-center text-xs font-bold text-white uppercase tracking-widest">Known</div>
                    </div>
                    <span className="text-xl font-bold text-white">{currentMatch.person}</span>
                 </div>
 
                 {/* Arrow */}
-                <div className="hidden md:flex text-zinc-600">
-                   <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                <div className="hidden md:flex text-zinc-700">
+                   <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
                 </div>
 
                 {/* Candidate */}
-                <div className="flex flex-col items-center gap-3">
-                   <div className="w-64 h-64 md:w-80 md:h-80 rounded-2xl overflow-hidden border-4 border-white/10 shadow-2xl relative bg-zinc-900">
+                <div className="flex flex-col items-center gap-4">
+                   <div className="w-64 h-64 md:w-80 md:h-80 rounded-2xl overflow-hidden border-4 border-white/10 shadow-2xl relative bg-ios-surface2">
                       <img src={currentMatch.item.url} className="w-full h-full object-contain" alt="Candidate" />
-                      <div className="absolute bottom-0 inset-x-0 bg-black/60 p-2 text-center text-xs font-bold text-zinc-400 uppercase">Found in Library</div>
+                      <div className="absolute bottom-0 inset-x-0 bg-black/70 backdrop-blur-sm p-2 text-center text-xs font-bold text-zinc-400 uppercase tracking-widest">Found in Library</div>
                    </div>
-                   <span className="text-sm text-zinc-500">Is this the same person?</span>
+                   <span className="text-sm text-zinc-500 font-medium">Is this the same person?</span>
                 </div>
              </div>
 
              <div className="flex justify-center gap-4">
                 <button 
                   onClick={handleReject}
-                  className="px-8 py-3 rounded-xl bg-zinc-800 text-white font-semibold hover:bg-zinc-700 transition-all flex items-center gap-2"
+                  className="px-8 py-3.5 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 font-semibold hover:bg-zinc-800 transition-all flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   No
                 </button>
                 <button 
                   onClick={handleConfirm}
-                  className="px-8 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
+                  className="px-8 py-3.5 rounded-xl bg-white text-black font-bold hover:bg-zinc-200 shadow-xl shadow-white/10 transition-all flex items-center gap-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                  Yes, it's {currentMatch.person}
+                  Yes, Confirm
                 </button>
              </div>
            </div>
@@ -211,15 +214,15 @@ export const FaceMatchModal: React.FC<FaceMatchModalProps> = ({
 
         {status === 'EMPTY' && (
            <div className="text-center space-y-6 max-w-md animate-in slide-in-from-bottom-4">
-              <div className="w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
-                 <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              <div className="w-20 h-20 bg-ios-success/10 rounded-full flex items-center justify-center mx-auto border border-ios-success/20">
+                 <svg className="w-10 h-10 text-ios-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
               <div>
                  <h3 className="text-xl font-bold text-white">All Caught Up!</h3>
                  <p className="text-zinc-400 mt-2">We couldn't find any more obvious matches to confirm right now.</p>
               </div>
               
-              <div className="pt-8 border-t border-white/10 w-full">
+              <div className="pt-8 border-t border-white/5 w-full">
                  <p className="text-sm text-zinc-500 mb-4">Upload more photos to continue improving detection.</p>
                  <Uploader onUpload={onBatchUpload} />
               </div>

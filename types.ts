@@ -1,3 +1,4 @@
+
 export enum MediaType {
   IMAGE = 'IMAGE',
   VIDEO = 'VIDEO',
@@ -21,15 +22,26 @@ export interface AnalysisResult {
   suggestedAction?: string;
 }
 
+export type UploadStatus = 'uploading' | 'ready' | 'failed';
+
 export interface MediaItem {
   id: string;
-  file: File;
+  file?: File;
   url: string;
   type: MediaType;
   name: string;
   timestamp: number;
   analysis?: AnalysisResult;
   isAnalyzing: boolean;
+  
+  // Storage & Upload Metadata
+  ownerId?: string;
+  storagePath?: string;
+  status?: UploadStatus;
+  progress?: number; // 0 to 100
+  error?: string;
+  mimeType?: string;
+  sizeBytes?: number;
 }
 
 export type AspectRatio = "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";
