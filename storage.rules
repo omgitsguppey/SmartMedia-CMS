@@ -2,10 +2,15 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Match /users/{userId}/{any_subpath}
-    // This covers /users/{uid}/originals/... and any future folders
+    // Match /users/{userId}/{allPaths=**}
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Strict: Only owner can write/delete
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Relaxed: Any auth user can read. 
+      // (Required for Admin Dashboard to view images, as Storage Rules cannot 
+      // read Firestore 'role' fields without Custom Claims)
+      allow read: if request.auth != null;
     }
     
     // Deny everything else

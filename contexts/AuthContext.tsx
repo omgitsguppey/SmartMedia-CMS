@@ -1,10 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase/client';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db, googleProvider } from '../firebase/client';
+import { ensureUserProfile } from '../services/storageService';
+import { UserProfile } from '../types';
 
 interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   loading: boolean;
+  isAdmin: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   authError: string | null;
@@ -12,7 +17,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  userProfile: null,
   loading: true,
+  isAdmin: false,
   signIn: async () => {},
   signOut: async () => {},
   authError: null,
@@ -22,15 +29,46 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Listen for auth state changes
+    let profileUnsubscribe: () => void | undefined;
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      // 1. UI_READY: Render immediately, don't wait for profile
       setUser(currentUser);
       setLoading(false);
+
+      if (currentUser) {
+          // 2. DATA_READY: Fetch profile in background
+          ensureUserProfile(currentUser).catch(err => 
+             console.warn("[Auth] Profile init minor issue:", err)
+          );
+           
+          // Subscribe to Profile Changes (Real-time Quota/Role)
+          const userRef = doc(db, 'users', currentUser.uid);
+          profileUnsubscribe = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as UserProfile;
+              setUserProfile(data);
+              setIsAdmin(data.role === 'admin');
+            }
+          });
+      } else {
+        setUserProfile(null);
+        setIsAdmin(false);
+        if (profileUnsubscribe) profileUnsubscribe();
+      }
     });
-    return () => unsubscribe();
+
+    return () => {
+      unsubscribe();
+      if (profileUnsubscribe) profileUnsubscribe();
+    };
   }, []);
 
   const signIn = async () => {
@@ -49,7 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         msg = error.message;
       }
       setAuthError(msg);
-      // We do not throw here so that UI components don't need to catch
     }
   };
 
@@ -62,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, authError }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, isAdmin, signIn, signOut, authError }}>
       {children}
     </AuthContext.Provider>
   );

@@ -12,6 +12,9 @@ export enum SafetyLevel {
   UNKNOWN = 'UNKNOWN',
 }
 
+export type AdminStatus = 'pending' | 'approved' | 'rejected';
+export type Visibility = 'private' | 'shared' | 'blocked';
+
 export interface AnalysisResult {
   description: string;
   tags: string[];
@@ -20,9 +23,13 @@ export interface AnalysisResult {
   safetyReason?: string;
   transcript?: string;
   suggestedAction?: string;
+  // Feedback Signal
+  isUserEdited?: boolean;
 }
 
-export type UploadStatus = 'uploading' | 'ready' | 'failed';
+// Updated lifecycle states
+// 'ready' and 'failed' are backend terms mapped to 'complete' and 'error' in frontend
+export type UploadStatus = 'uploading' | 'pending' | 'processing' | 'complete' | 'error';
 
 export interface MediaItem {
   id: string;
@@ -32,7 +39,7 @@ export interface MediaItem {
   name: string;
   timestamp: number;
   analysis?: AnalysisResult;
-  isAnalyzing: boolean;
+  isAnalyzing: boolean; // Computed property
   
   // Storage & Upload Metadata
   ownerId?: string;
@@ -42,6 +49,22 @@ export interface MediaItem {
   error?: string;
   mimeType?: string;
   sizeBytes?: number;
+
+  // Moderation & Visibility
+  adminStatus: AdminStatus;
+  visibility: Visibility;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  displayName?: string;
+  photoURL?: string;
+  role: 'user' | 'admin';
+  quotaBytes: number;
+  usedBytes: number;
+  createdAt?: any;
+  lastLogin?: any;
 }
 
 export type AspectRatio = "1:1" | "2:3" | "3:2" | "3:4" | "4:3" | "9:16" | "16:9" | "21:9";

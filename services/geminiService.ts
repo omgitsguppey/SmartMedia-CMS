@@ -1,38 +1,33 @@
-
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase/client";
-import { AnalysisResult, AspectRatio, MediaType, SafetyLevel } from "../types";
+import { AspectRatio } from "../types";
 
 /**
- * Calls the server-side Genkit flow 'analyzeMedia'.
+ * Pings the backend to verify connectivity, auth, and database access.
  */
-export const analyzeMedia = async (
-  file: File | undefined, 
-  type: MediaType,
-  knownPeople: string[] = [],
-  url?: string
-): Promise<AnalysisResult> => {
-  if (!url) {
-    throw new Error("Media URL is required for server-side analysis.");
-  }
-
+export const pingBackend = async (): Promise<any> => {
   try {
-    const analyzeFunction = httpsCallable<
-      { url: string; type: string; knownPeople: string[] },
-      AnalysisResult
-    >(functions, 'analyzeMedia');
-
-    const result = await analyzeFunction({
-      url,
-      type,
-      knownPeople
-    });
-
+    const pingFunction = httpsCallable<void, any>(functions, 'pipelinePing');
+    const result = await pingFunction();
     return result.data;
   } catch (error: any) {
-    console.warn("Genkit Analysis failed:", error.message);
-    throw error; // Propagate error so UI shows "Pending/Failed" instead of fake data
+    console.error("Backend Ping Failed:", error);
+    throw error;
   }
+};
+
+/**
+ * Calls the server-side 'analyzeMediaCallable' function to force a re-analysis.
+ */
+export const reanalyzeMedia = async (fileId: string): Promise<boolean> => {
+    try {
+        const fn = httpsCallable<{ fileId: string }, { success: boolean }>(functions, 'analyzeMediaCallable');
+        const result = await fn({ fileId });
+        return result.data.success;
+    } catch (error) {
+        console.error("Re-analysis failed:", error);
+        throw error;
+    }
 };
 
 /**
