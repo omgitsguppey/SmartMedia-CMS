@@ -22,6 +22,12 @@ export const LoginScreen: React.FC = () => {
           <div className="mb-8 p-4 bg-ios-danger/10 border border-ios-danger/20 rounded-xl text-ios-danger text-sm w-full text-left">
             <p className="font-bold mb-1">Authentication Failed</p>
             <p>{authError}</p>
+            {authError.includes('unauthorized') && (
+                <div className="mt-3 pt-3 border-t border-ios-danger/20 text-xs opacity-90">
+                    <p className="font-semibold mb-1">Developer Action Required:</p>
+                    <p>Add <code>{window.location.hostname}</code> to your Firebase Authorized Domains.</p>
+                </div>
+            )}
           </div>
         )}
 

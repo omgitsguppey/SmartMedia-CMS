@@ -4,8 +4,6 @@ import { db, storage } from '../firebase/client';
 import { collection, doc, setDoc, getDocs, getDoc, query, orderBy, serverTimestamp, updateDoc, onSnapshot, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, UploadTask, deleteObject, getDownloadURL } from 'firebase/storage';
 
-const DB_ID = "senseosdata";
-
 // --- Helpers ---
 const guessMediaType = (mime: string): MediaType => {
   if (mime.startsWith('video/')) return MediaType.VIDEO;
@@ -27,6 +25,7 @@ export const initializeUpload = async (
   storagePath: string; 
 }> => {
   const fileId = crypto.randomUUID();
+  // Ensure path adheres to: users/{uid}/**
   const storagePath = `users/${userId}/originals/${fileId}-${file.name}`;
   const firestorePath = `users/${userId}/files/${fileId}`;
 
@@ -48,7 +47,9 @@ export const initializeUpload = async (
 
   // 2. Start Upload Task
   const storageRef = ref(storage, storagePath);
-  const uploadTask = uploadBytesResumable(storageRef, file);
+  // CRITICAL: Add content type metadata so browser renders it correctly
+  const metadata = { contentType: file.type };
+  const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
   return { fileId, uploadTask, storagePath };
 };
@@ -56,11 +57,21 @@ export const initializeUpload = async (
 /**
  * Subscribes to the user's library in real-time.
  */
-export const subscribeToLibrary = (userId: string, onUpdate: (items: MediaItem[]) => void, onError: (error: Error) => void) => {
+export const subscribeToLibrary = (userId: string, onUpdate: (items: MediaItem[]) => void, onError: (error: any) => void) => {
   if (!userId) return () => {};
   
+  // Note: 'senseosdata' DB is used via the 'db' import from client.ts
   const q = query(collection(db, `users/${userId}/files`), orderBy("createdAt", "desc"));
+  
   return onSnapshot(q, (snapshot) => {
+    // 1. Handle Empty State explicitly
+    if (snapshot.empty) {
+      console.log(`[Library Sync] Snapshot empty for user ${userId} (this is valid/success).`);
+      onUpdate([]);
+      return;
+    }
+
+    // 2. Map Documents
     const items: MediaItem[] = [];
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
@@ -77,15 +88,19 @@ export const subscribeToLibrary = (userId: string, onUpdate: (items: MediaItem[]
         progress: status === 'ready' ? 100 : (data.progress || 0),
         error: data.error,
         analysis: analysis,
-        // If it's ready but has no analysis, we assume it's still being analyzed in the background
         isAnalyzing: status === 'ready' && !analysis,
         ownerId: data.ownerId,
         storagePath: data.storagePath,
         sizeBytes: data.sizeBytes
       });
     });
+    
     onUpdate(items);
-  }, onError);
+  }, (err) => {
+    // 3. Pass raw error to UI for diagnostics
+    console.error("[Library Sync] Real Firestore Error:", err);
+    onError(err);
+  });
 };
 
 /**
